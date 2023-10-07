@@ -4,5 +4,6 @@ import {movieController} from '../controllers/movieController.js'
 
 router.route('/')
     .post(movieController.createMovie)
+    .get(movieController.allMovies)
 
 export default router;

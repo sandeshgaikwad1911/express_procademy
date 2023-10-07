@@ -12,7 +12,7 @@ app.use('/api/v1', movieRoutes);
 
 const port = PORT || 4001;
 
-app.listen(4000, ()=>{
+app.listen(port, ()=>{
     connectDB(); 
     console.log(`app is running on http://localhost:${port}`);
 });
