@@ -15,7 +15,7 @@ const movieSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    rating: {
+    ratings: {
         type: Number
     },
     totalRating:{
