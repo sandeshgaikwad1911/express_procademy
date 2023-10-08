@@ -42,7 +42,13 @@ export const movieController = {
     getMovie: async(req,res,next)=>{
         try {
             // const movie = await Movie.findOne({_id: req.params.id})
-            const movie = await Movie.findById(req.params.id)
+            const movie = await Movie.findById(req.params.id);
+            if(!movie){
+                return res.status(400).json({
+                    status: "fail",
+                    message: "This movie is not available"
+                })
+            }
 
             return res.status(200).json({
                 status: "success",
@@ -61,6 +67,12 @@ export const movieController = {
     updateMovie: async(req,res,next)=>{
         try {
             const updateMovie = await Movie.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, runValidators: true})
+            if(!updateMovie){
+                return res.status(400).json({
+                    status: "fail",
+                    message: "This movie is not available"
+                })
+            }
             return res.status(200).json({
                 status: "success",
                 data:{
