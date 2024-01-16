@@ -6,20 +6,22 @@ export const movieController = {
     createMovie: async(req,res,next)=>{
         try {
             const movie = await Movie.create(req.body);
-            res.status(201).json({
+            return res.status(201).json({
                 status: "success",
                 data:{
                     movie: movie
                 }
             })
         } catch (error) {
-            res.status(400).json({
+            return res.status(400).json({
                 status: "fail",
                 message: error.message
             })
         }
     },
 
+// ----------------------------------------------------------------------------------------------
+    
     getMovie: async(req,res,next)=>{
         try {
             // const movie = await Movie.findOne({_id: req.params.id})
@@ -30,7 +32,7 @@ export const movieController = {
                     message: "This movie is not available"
                 })
             }
-
+            
             return res.status(200).json({
                 status: "success",
                 data:{
@@ -45,7 +47,10 @@ export const movieController = {
         }
     },
 
+// ----------------------------------------------------------------------------------------------
+
     updateMovie: async(req,res,next)=>{
+        
         try {
             const updateMovie = await Movie.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, runValidators: true})
             if(!updateMovie){
@@ -67,6 +72,14 @@ export const movieController = {
             })
         }
     },
+
+    /* 
+        [1].    {new: true}  ... returns updated document.
+        [2].    {runValidators: true} .... while updating documents.. validators defined in model is not work by default
+                    so we have to use {runValidators: true}
+    */
+
+// ----------------------------------------------------------------------------------------------
 
     deleteMovie: async(req,res,next)=>{
         try {
@@ -90,178 +103,182 @@ export const movieController = {
         }
     },
 
-    getAllMovies: async(req, res, next)=>{
-        console.log("req.query", req.query);
+// ----------------------------------------------------------------------------------------------
+
+    /* getAllMovies: async(req, res, next)=>{
         try {
-            // const allMovies = await Movie.find();
-
-            // const allMovies = await Movie.find(req.query);
-
-            /* 
-                const allMovies = await Movie.find()
-                    .where('duration').equals(req.query.duration)
-                    .where('ratings').equals(req.query.ratings)
-            */
-
-            /*
-                const queryObj = {...req.query}
-                const excludeField = ['limit', "sort", "page"];
-                excludeField.forEach((el)=>{
-                    // delete queryObj.el  // not work
-                    delete queryObj[el]
-                    // delete operator in js.. learn more
-                })
-                const allMovies = await Movie.find(queryObj);
-            */
-
-            
-            /*
-                const allMovies = await Movie.find({duration: {$gte: 117}, ratings: {$gte: 7.4}, price: {$lte: 60} })
-       
-                            or      mongoose special method.
-                
-                // http://localhost:4000/api/v1/?duration=117&ratings=7&price=60
-                const allMovies = await Movie.find()
-                    .where('duration').gte(req.query.duration)
-                    .where('ratings').gte(req.query.ratings)
-                    .where('price').lte(req.query.price)
-
-                        or
-
-                http://localhost:4000/api/v1/?duration[gte]=117&ratings[gte]=7&price[lte]=60
-                let queryString;
-                queryString = JSON.stringify(req.query);
-                queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
-                // \b => exact match. /g => global
-
-                const queryObj = JSON.parse(queryString);
-                console.log('queryObj', queryObj)
-
-                const allMovies = await Movie.find(queryObj);
-
-            */
-                
-
-            if(allMovies?.length < 1){
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'no movie found'
-                })
-            }
-
+            const allMovies = await Movie.find({});
             return res.status(200).json({
                 status: "success",
+                length: allMovies?.length,
                 data:{
-                    length: allMovies?.length,
                     allMovies: allMovies
                 }
             })
         } catch (error) {
-            res.status(400).json({
+            res.status(404).json({
                 status: "fail",
                 message: error.message
             })
         }
 
-    },
+    }, */
 
+    // http://localhost:4000/api/v1
     
-}
+// ----------------------------------------------------------------------------------------------
 
+    //  excluding fields from url which are not present on Modal
 
-/*      http://localhost:4000/api/v1/?ratings=6.4
-        console.log(req.query) => req.query { ratings: '6.4' }
+    /* getAllMovies: async(req, res, next)=>{
+        try {
 
-        http://localhost:4000/api/v1/?duration=90&rating=6
-        console.log(req.query)      =>      { duration: '90', rating: '6' }
+            let query = req.query;
+            console.log("query",query)
 
-        we see duration or ratings are number but we get string inside obj, need to convert it into Number
-        console.log(+req.query.duration)
+            let queryObj = {...req.query}
+            console.log("queryObj",queryObj)
 
-*/
+            const excludeField = ["sort", "page", "limit"]
+            excludeField.forEach((el)=>{
+                delete queryObj[el]
+            })
 
-/* 
-    http://localhost:4000/api/v1/?ratings=6.4&duration=117
+            console.log("queryObj after exclude fields", queryObj);
 
-    Movie.find(req.query)
+            // const allMovies = await Movie.find(query);
+            const allMovies = await Movie.find(queryObj);
 
-        or
+            return res.status(200).json({
+                status: "success",
+                length: allMovies?.length,
+                data:{
+                    allMovies: allMovies
+                }
+            })
+        } catch (error) {
+            res.status(404).json({
+                status: "fail",
+                message: error.message
+            })
+        }
 
-    const allMovies = await Movie.find()
-                .where('duration').equals(req.query.duration)
-                .where('ratings').equals(req.query.ratings)
+    }, */
 
-      => its not great approach sometime, <=
+    /* 
+        on req obj we have property called query ( req.query ) 
+        which is basically object which stores query string as key value pair
 
-    because sometime we fire query which is not available field on Movie Object.(collction Object)
-    for eg. http://localhost:4000/api/v1/?duration=117&ratings=6.4&sort=1&page=11
-        we don't have sort and page field on Movie obj.
+        http://localhost:4000/api/v1?duration=109&releaseYear=2013
+        let query = req.query;
+        console.log("query",query)
+        query { duration: '109', releaseYear: '2013' }
 
-        so we need to remove or exclude some field from query string which is not available on Movie obj
-        _ well we not exclude field from orignal query obj or query string.
+        as we see all the values are string types.. so when we want to use those
+        values we need to convert them into proper data types.
+        for eg.     Movie.find({duration: +Movie.find({duration: +req.query.duration});});        
+        //  + sign before req.query.duration... indicates convert string into number
 
-        _ we create shallow copy of req.query obj
-            const queryObj = {...req.query}
-        _and then we perform our operation on that shallow copy obj
-        so we will exclude all that field that dont want on query obj.
-        
-        _ const excludeField = ["sort", "page", "limit"];
+        we can achieve same result using mongoose special methods, 
+        const allMovies = await Movie.find()
+                .where("duration").equals(req.query.duration)
+                .where("releaseYear").equals(req.query.releaseYear);
+        but it dosen't work when there is no specifid query in url... here we r not using this in proper way..
 
-        excludeField.forEach((el)=>{
-            // delete queryObj.el     // not work
-            delete queryObj[el]
-            // delete operator in js.. learn more
+        const allMovies = await Movie.find(query);
+            if we dont specify anything in url query.. it return all the documents
+            but it's not going to work in all the scenario like sort, page because these are not the properties of Movie Modal
+            http://localhost:4000/api/v1?sort=1&page=10?duration=117     
+                we have no such property like sort or page or limit on Movie Modal
+                so we will have to exclude such options, we are not exclude it from url.. we make shallow copy req.query obj
+
+                const queryObj = req.query      // reference to same obje
+                const queryObj = {...req.query}  // it creates shallow copy
+
+                we perform operation on shallow copy obj not on actual query obj
             
-            // if queryObj contain field from excludeField Array is going to delete
-        })
-        const allMovies = await Movie.find(queryObj);
-*/
+                let queryObj = {...req.query}
+                console.log("queryObj",queryObj)
 
+                const excludeField = ["sort", "page", "limit"]
+                excludeField.forEach((el)=>{
+                    delete queryObj[el]
+                })
+
+                console.log("queryObj after exclude fields", queryObj);
+
+                // const allMovies = await Movie.find(query);
+                const allMovies = await Movie.find(queryObj);
+
+    */
+ 
+
+// ----------------------------------------------------------------------------------------------
+
+// advance filtering on query
+
+getAllMovies: async(req, res, next)=>{
+    try {
+
+        // const allMovies = await Movie.find({duration: {$gte: 150}, price: {$lte: 60}});
+
+        // let query = req.query;
+        // console.log('query', query)
+
+        // let queryString = JSON.stringify(query)
+        // console.log('queryString', queryString)
+
+        // queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
+        // console.log('modified query string', queryString)
+
+        // const queryObj = JSON.parse(queryString)
+        // console.log('queryObj', queryObj);
+
+        // const allMovies = await Movie.find(queryObj);
+
+        const allMovies = await Movie.find({})
+            .where("duration").gte(req.query.duration);
+        
+        return res.status(200).json({
+            status: "success",
+            length: allMovies?.length,
+            data:{
+                allMovies: allMovies
+            }
+        })
+    } catch (error) {
+        res.status(404).json({
+            status: "fail",
+            message: error.message
+        })
+    }
+
+},
 
 /* 
-        http://localhost:4000/api/v1/
-        const allMovies = await Movie.find({duration: {$gte: 117}, ratings: {$gte: 7.4}, price: {$lte: 60} })
+    const allMovies = await Movie.find({duration: {$gte: 150}, price: {$lte: 60}});
 
-                 to achive above thing using query parameter.
+    http://localhost:4000/api/v1?duration[gte]=150&price[lte]=60
+        let query = req.query;
+        console.log('query', query)
+        query { duration: { gte: '150' }, price: { gte: '60' } }
+    we need to add $ sign before gte... to achieve desired result
+    1.  first we need to convert query obj into string to use regular expression
+            let queryString = JSON.stringify(query)
+    2.  queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
+            \b .. \b   that means excatmatch,
+            (match)=>   here match receives (gte|gt|lte|lt)   and we add $ sign before them
+    3. then convert queryString into JsonObj using JSON.parse(quetyString)
 
-        http://localhost:4000/api/v1/?duration[gte]=117&ratings[gte]=7&price[lte]=60
-        const allMovie = await Movie.find(req.query)
-
-        console.log(req.query);
-        {
-            duration: { gte: '117' },
-            ratings: { gte: '7' },
-            price: { lte: '60' }
-        } 
-    
-
-        we are converting this query obj to string. so we can apply string method or regular expression. so we can achive desired goal.
-
-        let queryString = JSON.stringify(req.query)
-            console.log('queryString', queryString)
-        {"duration":{"gte":"117"},"ratings":{"gte":"7"},"price":{"lte":"100"}}
-
-        we need to convert all operator corresponding to mongoDB operator. like gte we have $gte
-
-        let queryString;
-        queryString = JSON.stringify(req.query);
-        queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
-        // \b => exact match. /g => global
-
-        // again need to convert string to obj
-        const queryObj = JSON.parse(queryString);
-        console.log('queryObj', queryObj)
-
-        const allMovies = await Movie.find(queryObj);
-
-                    OR
-
-        http://localhost:4000/api/v1/?duration=117&ratings=7&price=60
-                const allMovies = await Movie.find()
-                    .where('duration').gte(req.query.duration)
-                    .where('ratings').gte(req.query.ratings)
-                    .where('price').lte(req.query.price)
-
-        
+    **we can also achieve same functionality using mongoose special method
+        http://localhost:4000/api/v1?duration=150&price=60
+        const allMovies = await Movie.find({})
+            .where("duration").gte(150)
+            .where("price").lte(60);
 
 */
+
+// ----------------------------------------------------------------------------------------------
+
+
+}

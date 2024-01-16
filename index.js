@@ -9,7 +9,6 @@ app.use(express.json());
 
 app.use('/api/v1', movieRoutes);
 
-
 const port = PORT || 4001;
 
 app.listen(port, ()=>{
