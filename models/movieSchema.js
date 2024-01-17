@@ -4,7 +4,8 @@ const movieSchema = new mongoose.Schema({
         type: String,
         required: [true, 'name is required!'],
         unique: true,
-        trim: true  // extra white-space is removed before and after string
+        trim: true,  // extra white-space is removed before and after string
+        // select: false   // this property will not be shown
     },
     description: {
         type: String,

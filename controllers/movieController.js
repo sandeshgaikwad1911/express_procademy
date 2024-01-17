@@ -292,19 +292,21 @@ getAllMovies: async(req, res, next)=>{
         queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
         const queryObj = JSON.parse(queryString)
 
-
-        // -----sorting logic-------
-        
         let query =  Movie.find(queryObj);
-            // here sort() method is mongoose sort method, and can be used
-            // on query object only, thats why removed await keyword from Movie.find()
+              // here sort() method is mongoose sort method, and can be used
+             // on query object only, thats why removed await keyword from Movie.find()
             // otherwise it return array
+
+// -----------------------------------------------------------------------------------------------------------------
+
+        // sorting logic
+    
         if(req.query.sort){
 
              // if want to sortBy single field then url will be
             // http://localhost:4000/api/v1/movies?sort=price           // ascending order
-            // http://localhost:4000/api/v1/movies?sort=-price          // descending order
-            // query = query.sort(req.query.sort)
+           // http://localhost:4000/api/v1/movies?sort=-price          // descending order
+          // query = query.sort(req.query.sort)
 
             // if want to sortBy more than 1 field then url will be http://localhost:4000/api/v1/movies?sort=-price,ratings
             // also working with single field
@@ -317,7 +319,60 @@ getAllMovies: async(req, res, next)=>{
         else{
             query = query.sort("-releaseYear");   // default sorting is based on releaseYear
         }
+
+// -----------------------------------------------------------------------------------------------------------------
+
+        // specific fields only
+
+        // for client it is always ideal to receive as little data as possibe
+        // in order to reduce bandwidth that is consumed with each request
+        // it is also true when we have really heavy data set
         
+        if(req.query.fields){
+            // query = query.select("name price duration")
+            // http://localhost:4000/api/v1/movies?fields=name,price,duration           // display specified fields only
+            // http://localhost:4000/api/v1/movies?fields=-price,-duration              // exclude specified fields show all other fields
+            // we can't use mixture of both fields
+            const fields = req.query.fields.split(',').join(' ');
+            // console.log('fields', fields);
+            query = query.select(fields);
+        }
+        else{
+            query = query.select("-__v");               // exclude __v field.
+            // query = query.select("-__v, -_id");      // exclude __v,_id field.
+        }
+
+// -----------------------------------------------------------------------------------------------------------------
+
+        // pagination
+
+
+        const page = req.query.page*1 || 1;
+        const limit = req.query.limit*1 || 10;
+        // on req.query object we get string value but we have to convert it into number so req.query.page*1
+        // on page1 we display 1-10 items means skipping 0 items,
+        // on page 2 we display 11-20 items means skipping 10 itmes
+        // on page 3 we display 21-30 items means skipping 20 itmes
+        // so we have to calculate how many records we have to skip based on page number and limit.
+        const skip = (page - 1) * limit;
+        query = query.skip(skip).limit(limit);
+
+        // http://localhost:4000/api/v1/movies?limit=2
+
+        // http://localhost:4000/api/v1/movies?page=1&limit=3
+        // here we have total 8 records only.. so limit we take is 3 only
+
+        if(req.query.page){
+            const totalDocuments = await Movie.countDocuments();
+            if(skip >= totalDocuments){
+                throw new Error("This page is not found!")
+            }
+        }
+
+        // top 5 highest rated movies
+        // http://localhost:4000/api/v1/movies?sort=-ratings&limit=5
+
+// -----------------------------------------------------------------------------------------------------------------
 
        const allMovies = await query;
      
