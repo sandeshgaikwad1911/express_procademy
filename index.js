@@ -7,7 +7,7 @@ const app = express();
 
 app.use(express.json());
 
-app.use('/api/v1', movieRoutes);
+app.use('/api/v1/movies', movieRoutes);
 
 const port = PORT || 4001;
 

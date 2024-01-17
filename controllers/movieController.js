@@ -124,7 +124,7 @@ export const movieController = {
 
     }, */
 
-    // http://localhost:4000/api/v1
+    // http://localhost:4000/api/v1/movies
     
 // ----------------------------------------------------------------------------------------------
 
@@ -169,7 +169,7 @@ export const movieController = {
         on req obj we have property called query ( req.query ) 
         which is basically object which stores query string as key value pair
 
-        http://localhost:4000/api/v1?duration=109&releaseYear=2013
+        http://localhost:4000/api/v1/movies?duration=109&releaseYear=2013
         let query = req.query;
         console.log("query",query)
         query { duration: '109', releaseYear: '2013' }
@@ -188,7 +188,7 @@ export const movieController = {
         const allMovies = await Movie.find(query);
             if we dont specify anything in url query.. it return all the documents
             but it's not going to work in all the scenario like sort, page because these are not the properties of Movie Modal
-            http://localhost:4000/api/v1?sort=1&page=10?duration=117     
+            http://localhost:4000/api/v1/movies?sort=1&page=10?duration=117     
                 we have no such property like sort or page or limit on Movie Modal
                 so we will have to exclude such options, we are not exclude it from url.. we make shallow copy req.query obj
 
@@ -217,28 +217,110 @@ export const movieController = {
 
 // advance filtering on query
 
+// getAllMovies: async(req, res, next)=>{
+//     try {
+
+//         // const allMovies = await Movie.find({duration: {$gte: 150}, price: {$lte: 60}});
+
+//         // http://localhost:4000/api/v1?duration=117&price=90
+//         //  const allMovies = await Movie.find({})
+//         //     .where("duration").gte(req.query.duration)
+//         //     .where("price").lte(req.query.price);
+
+
+//         // http://localhost:4000/api/v1?duration[gte]=150&price[lte]=60
+//         // [gte] auto converted to {gte} 
+//         let query = req.query;
+//         // console.log('query', query)         //  { duration: { gte: '150' }, price: { lte: '60' } }         
+
+//         let queryString = JSON.stringify(query)
+//         // console.log('queryString', queryString)         //  {"duration":{"gte":"150"},"price":{"lte":"60"}}
+
+//         queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
+//         // console.log('modified query string', queryString)       //  {"duration":{"$gte":"150"},"price":{"$lte":"60"}}
+
+//         const queryObj = JSON.parse(queryString)
+//         // console.log('queryObj', queryObj);          //  { duration: { '$gte': '150' }, price: { '$lte': '60' } }
+
+//         const allMovies = await Movie.find(queryObj);
+     
+//         return res.status(200).json({
+//             status: "success",
+//             length: allMovies?.length,
+//             data:{
+//                 allMovies: allMovies
+//             }
+//         })
+//     } catch (error) {
+//         res.status(404).json({
+//             status: "fail",
+//             message: error.message
+//         })
+//     }
+
+// },
+
+/* 
+    const allMovies = await Movie.find({duration: {$gte: 150}, price: {$lte: 60}});
+
+    http://localhost:4000/api/v1/movies?duration[gte]=150&price[lte]=60
+        let query = req.query;
+        console.log('query', query)
+        query { duration: { gte: '150' }, price: { gte: '60' } }
+    we need to add $ sign before gte... to achieve desired result
+    1.  first we need to convert query obj into string to use regular expression
+            let queryString = JSON.stringify(query)
+    2.  queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
+            \b .. \b   that means excatmatch,
+            (match)=>   here match receives (gte|gt|lte|lt)   and we add $ sign before them
+    3. then convert queryString into JsonObj using JSON.parse(quetyString)
+
+    **we can also achieve same functionality using mongoose special method
+        http://localhost:4000/api/v1/movies?duration=150&price=60
+        const allMovies = await Movie.find({})
+            .where("duration").gte(150)
+            .where("price").lte(60);
+
+*/
+
+// ----------------------------------------------------------------------------------------------
+
 getAllMovies: async(req, res, next)=>{
     try {
 
-        // const allMovies = await Movie.find({duration: {$gte: 150}, price: {$lte: 60}});
+        let queryString = JSON.stringify(req.query)
+        queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
+        const queryObj = JSON.parse(queryString)
 
-        // let query = req.query;
-        // console.log('query', query)
 
-        // let queryString = JSON.stringify(query)
-        // console.log('queryString', queryString)
-
-        // queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
-        // console.log('modified query string', queryString)
-
-        // const queryObj = JSON.parse(queryString)
-        // console.log('queryObj', queryObj);
-
-        // const allMovies = await Movie.find(queryObj);
-
-        const allMovies = await Movie.find({})
-            .where("duration").gte(req.query.duration);
+        // -----sorting logic-------
         
+        let query =  Movie.find(queryObj);
+            // here sort() method is mongoose sort method, and can be used
+            // on query object only, thats why removed await keyword from Movie.find()
+            // otherwise it return array
+        if(req.query.sort){
+
+             // if want to sortBy single field then url will be
+            // http://localhost:4000/api/v1/movies?sort=price           // ascending order
+            // http://localhost:4000/api/v1/movies?sort=-price          // descending order
+            // query = query.sort(req.query.sort)
+
+            // if want to sortBy more than 1 field then url will be http://localhost:4000/api/v1/movies?sort=-price,ratings
+            // also working with single field
+            // first it sort result by price, then sorted result again sort by ratings
+            const sortBy = req.query.sort.split(",").join(" ")
+            // query = query.sort("price ratings")      // this is how mongoose sort with multiple fields
+            // console.log('sortBy', sortBy)
+            query = query.sort(sortBy)
+        }
+        else{
+            query = query.sort("-releaseYear");   // default sorting is based on releaseYear
+        }
+        
+
+       const allMovies = await query;
+     
         return res.status(200).json({
             status: "success",
             length: allMovies?.length,
@@ -255,28 +337,6 @@ getAllMovies: async(req, res, next)=>{
 
 },
 
-/* 
-    const allMovies = await Movie.find({duration: {$gte: 150}, price: {$lte: 60}});
-
-    http://localhost:4000/api/v1?duration[gte]=150&price[lte]=60
-        let query = req.query;
-        console.log('query', query)
-        query { duration: { gte: '150' }, price: { gte: '60' } }
-    we need to add $ sign before gte... to achieve desired result
-    1.  first we need to convert query obj into string to use regular expression
-            let queryString = JSON.stringify(query)
-    2.  queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
-            \b .. \b   that means excatmatch,
-            (match)=>   here match receives (gte|gt|lte|lt)   and we add $ sign before them
-    3. then convert queryString into JsonObj using JSON.parse(quetyString)
-
-    **we can also achieve same functionality using mongoose special method
-        http://localhost:4000/api/v1?duration=150&price=60
-        const allMovies = await Movie.find({})
-            .where("duration").gte(150)
-            .where("price").lte(60);
-
-*/
 
 // ----------------------------------------------------------------------------------------------
 
