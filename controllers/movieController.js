@@ -869,10 +869,10 @@ export const movieController = {
                 {$group: {
                     _id: "$genres",
                     movieCount: {$sum: 1},
-                    movies: {$push: "$name"},
+                    movies: {$push: "$name"},       // $push return array of all the values found
                 }},
                 {$addFields: {genre: "$_id"}},
-                {$project: {_id: 0}},
+                {$project: {_id: 0}},       // $project 0 means exclude field and 1 menans include field
                 {$sort: {movieCount: -1}},
                 // {$limit: 6}
                 {$match: {genre: genre}}
@@ -892,6 +892,7 @@ export const movieController = {
         }
     },
 
+// ----------------------------------------------------------------------------------------------
 
 }
 
