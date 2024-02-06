@@ -912,6 +912,7 @@ import { Movie } from "../models/movieSchema.js";
 import ApiFeatures from "../utils/ApiFeatures.js";
 import { CustomError } from "../utils/CustomError.js";
 import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
+
 // ------------------------------------------------------------------------------------------------------------------------
 
 
@@ -943,7 +944,7 @@ export const movieController = {
      /*
      here we are passing createMovie function as an argument to  asyncErrorHandler() function =>  createMovie : asyncErrorHandler()
      
-     the function we are passing is asyc function and we know that function run asynchronously is return promise
+     the function we are passing is asyc function and we know that if function run asynchronously it return promise
      and when there is error in async function means promise has been rejected. and we can handle that rejected promise
      by calling catch() method on it
 
@@ -965,42 +966,34 @@ export const movieController = {
 
 // ----------------------------------------------------------------------------------------------
     
-    getMovie: async(req,res,next)=>{
-        try {
-            // const movie = await Movie.findOne({_id: req.params.id})
-            const movie = await Movie.findById(req.params.id);
-            if(!movie){
-                return res.status(400).json({
-                    status: "fail",
-                    message: "This movie is not available"
-                })
-            }
-            
-            return res.status(200).json({
-                status: "success",
-                data:{
-                    movie: movie
+    getMovie:  asyncErrorHandler(async(req, res, next)=>{
+                const movieId =  req.params.id;
+                // const movie = await Movie.findOne({_id: movieId}); 
+                const movie = await Movie.findById(movieId);
+                if(!movie){
+                    // console.log('movie', movie)
+                    // return  next(new CustomError("Resource not found.", 404));
+                    const err = new CustomError("Resource not found", 404)
+                    return next(err);
+                   
                 }
-            })
-        } catch (error) {
-            res.status(400).json({
-                status: "fail",
-                message: error.message
-            })
-        }
-    },
+                return res.status(200).json({
+                    status: "success",
+                    data:{
+                        movie: movie
+                    }
+                })                     
+    }),
 
 // ----------------------------------------------------------------------------------------------
 
-    updateMovie: async(req,res,next)=>{
+    updateMovie: asyncErrorHandler(async(req,res,next)=>{
         
-        try {
+        
             const updateMovie = await Movie.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, runValidators: true})
             if(!updateMovie){
-                return res.status(400).json({
-                    status: "fail",
-                    message: "This movie is not available"
-                })
+                const error = new CustomError('movie not found', 404)
+                return next(error);
             }
             return res.status(200).json({
                 status: "success",
@@ -1008,13 +1001,7 @@ export const movieController = {
                     movie: updateMovie
                 }
             })
-        } catch (error) {
-            res.status(400).json({
-                status: "fail",
-                message: error.message
-            })
-        }
-    },
+    }),
 
     /* 
         [1].    {new: true}  ... returns updated document.
@@ -1246,6 +1233,7 @@ export const movieController = {
 
             const features = new ApiFeatures(Movie.find(), req.query).filter().sort().limitFields().paginate()
             let allMovies = await features.query
+
             // let queryString = JSON.stringify(req.query)
             // queryString = queryString.replace(/\b(gte|gt|lte|lt)\b/g, (match)=>`$${match}`);
             // const queryObj = JSON.parse(queryString)

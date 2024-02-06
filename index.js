@@ -3,8 +3,8 @@ import { connectDB } from "./config/db_connection.js";
 import movieRoutes from './routes/movieRoutes.js'
 
 import express from "express";
-import { CustomError } from "./utils/CustomError.js";
-import { globalErrorHandler } from "./controllers/errorController.js";
+import  { CustomError }  from "./utils/CustomError.js";
+import { globalErrorHandler } from "./utils/globalErrorHandler.js";
 
 const app = express();
 
@@ -52,11 +52,8 @@ app.use('/api/v1/movies', movieRoutes);
 app.all('*', (req, res, next)=>{
     const err = new CustomError(`Can't find ${req.originalUrl} on the server`, 404);
     // console.log('err', err)
-    next(err);  // passing err object to globalErrorHandler middleware function.
-
+   next(err);  // passing err object to globalErrorHandler middleware function.
 })
-
-
 
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -97,4 +94,9 @@ app.listen(port, ()=>{
     we mainly handle    operational errors => express comes with error handling out of the box, we have to write global error
     handling middleware, which catch and handle all the errors happening in the application.
 
+*/
+
+/* 
+    "mongoose": "^6.9.2",
+    "express": "^4.18.2",
 */

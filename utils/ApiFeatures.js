@@ -14,9 +14,10 @@ class ApiFeatures{
 
        return this;
     // here this pointing to the current instance
-    // using Apifeatures class we can create multiple objects
+    // using Apifeatures class we can create multiple instances
+
     // why we need to return this here, because we create another methods
-    // and we want to  chain that methods so that we can use .filter().sort().page() etc..
+    // and we want to  chain that methods for eg .filter().sort().page() etc..
 
     };
 
@@ -73,7 +74,8 @@ class ApiFeatures{
 export default ApiFeatures
 
 /*
-        this.query and this.queryStr are properties of Apifeatures class and can be accessible anywhere inside this class
-        query and queryStr can be used inside constructor only.
+    1]. this.query and this.queryStr are properties of Apifeatures class and can be accessible anywhere inside this class
+
+    2]. query and queryStr can be used inside constructor only.
 
 */

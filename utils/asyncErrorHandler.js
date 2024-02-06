@@ -1,4 +1,7 @@
-// goal of this function is catch the error that occurs in async function
+// goal of this function is catch the error that occurs in async function.
+
+// there will be no need of try-catch block in Controller
+
 export const asyncErrorHandler = (func)=>{
     // func(req, res, next);
     //  here, func() function return promise, that promise either resolve or rejected
@@ -14,4 +17,8 @@ export const asyncErrorHandler = (func)=>{
     }
 
 }
+
+/* 
+    if we pass any argument to next() function... it is sent to global error handler function
+*/
 

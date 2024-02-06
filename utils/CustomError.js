@@ -1,4 +1,4 @@
-//  in order make class a erro class we need to inherit built-in error class so
+//  in order make class a error class we need to inherit built-in error class so
 export class CustomError extends  Error {
 
     constructor(message, statusCode){
@@ -9,12 +9,13 @@ export class CustomError extends  Error {
             then message is automatically set to super(message)
         */
 
-        // this.something =>  means adding property on CustomError class
-        this.statusCode = statusCode;
-
+       this.statusCode = statusCode;
+       
+       // this.something =>  means adding property on CustomError class
         this.status = statusCode >= 400 && statusCode < 500 ? "fail" : "error";
 
         this.isOperational = true;
+        // in production we want to send those errors only, that are operational
 
         Error.captureStackTrace(this, this.constructor)
         /* captureStackTrace    tells where the actually error happens in the code.
@@ -24,5 +25,6 @@ export class CustomError extends  Error {
         */
     }
 }
+
 
 // const error = new CustomError("Internal Server Error", 500);    // it's calling constructor.
