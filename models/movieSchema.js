@@ -39,6 +39,7 @@ const movieSchema = new mongoose.Schema({
             message: "rating must be above 0 and below 11"
             // message:  props => `${props.value} is out of range`
         }
+        // validate is from mongoose, validator is library we installed
     },
     totalRating:{
         type: Number

@@ -15,7 +15,7 @@ export function globalErrorHandler(error, req, res, next){
             error: error
         })
     }
-    else if(Node_Env == "development"){
+    else if(Node_Env == "production"){
         return res.status(error.statusCode).json({
             status: error.status,
             message: error.message
@@ -38,8 +38,16 @@ const castErrorHandler = (error)=>{
 }
 
 const duplicateKeyHandler = (error)=>{
-    const message = `There is already movie with name '${error.keyValue.name}', Please use another name.`
+    const name_email = error.keyValue.name || error.keyValue.email 
+    const message = `There is already '${name_email}' available, Please provide different value.`
     return new CustomError(message, 404);
+}
+
+const validationErrorHandler = (err)=>{
+   const errors =  Object.values(err.errors).map((val)=>val.message);
+   const errorMessages = errors.join(". ");
+   const errMessage = `Invalid input data: ${errorMessages}`
+   return new CustomError(errMessage , 400)   
 }
 
 // --------------------------------------------------------------------------------------------------------------
@@ -68,7 +76,7 @@ const prodErrors = (res, error)=>{
         */
     }
     else{
-        return res.status(500).json({
+        return res.status(error.statusCode).json({
             status: "error",
             message: "Something went wrong! Please, try again later"
         })
@@ -78,6 +86,9 @@ const prodErrors = (res, error)=>{
 
             but above we have general message only for all the erros..
             we need  to send specific messages for each type of error.
+            so,
+            we have to make mongoose validation error also isOperational error, so we can send meanigfull
+            message to client.
         */
     }  
 }
@@ -94,13 +105,19 @@ export function globalErrorHandler(error, req, res, next){
     }
     else if(Node_Env == "production"){
 
-        if(error.name === "CastError"){
+        if(error.name == "CastError"){
           error = castErrorHandler(error)
         }
         if(error.code == 11000){
             error = duplicateKeyHandler(error)
         }
+        if(error.name == "ValidationError"){
+            error =  validationErrorHandler(error)
+        }
         prodErrors(res, error)
     }
 }
+
+
+
 

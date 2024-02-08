@@ -1,6 +1,7 @@
 import { PORT } from "./config/config.js";
 import { connectDB } from "./config/db_connection.js";
 import movieRoutes from './routes/movieRoutes.js'
+import authRoutes from './routes/authRoutes.js'
 
 import express from "express";
 import  { CustomError }  from "./utils/CustomError.js";
@@ -11,6 +12,7 @@ const app = express();
 app.use(express.json());
 
 app.use('/api/v1/movies', movieRoutes);
+app.use('/api/v1/users', authRoutes);
 
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -80,6 +82,11 @@ app.listen(port, ()=>{
     connectDB(); 
     console.log(`app is running on http://localhost:${port}`);
 });
+
+/* 
+    npm run dev
+    npm run prod
+*/
 
 
 /* 
