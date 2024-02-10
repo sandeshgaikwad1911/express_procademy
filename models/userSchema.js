@@ -5,35 +5,49 @@ import bcrypt from 'bcryptjs';
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, "Please enter your name"],
+        required: [true, "Please enter your name."],
     },
     email: {
         type: String,
         unique: true,
         lowercase: true,
-        required: [true, "Please enter an email address"],
-        validate: [validator.isEmail, "Please enter a valid email"]
+        required: [true, "Please enter an email address."],
+        validate: [validator.isEmail, "Please enter a valid email."]
     },
     photo: {
         type: String,
         // default: 'default.jpg'
     },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        // enum: ['user', 'admin', 'admin1'],
+        default: 'user'
+    },
     password: {
         type: String,
-        required: [true, "Please enter a password"],
-        minLength: 8
+        required: [true, "Please enter a password."],
+        minLength: 8,
+        select: false   // password will not be shown in response
     },
     confirmPassword: {
         type: String,
-        required: ['Please confirm your password'],
+        required: [true, 'Please confirm your password.'],
         validate: {
             validator: function(val){
-               return val == this.password;
+               return val === this.password;
             },
             message: 'password and confirmPassword does not match'
         }
-        // validator is only work with save() or create() function only. does not work with findOneAndUpdate()
-    }
+        // validator is work with save() or create() function only. does not work with findOneAndUpdate()
+    },
+    passwordChangedAt: Date
+    /* 
+        passwordChangedAt field will be available on user document only if this field has some value
+        that means when user changed the password.
+        if user not changed password this passwordChangedAt field will be undefined.
+        that means it will not be available on user document.
+    */
 })
 
 userSchema.pre('save', async function(next){
@@ -53,6 +67,12 @@ userSchema.pre('save', async function(next){
     this.confirmPassword = undefined
     next();
 })
+
+userSchema.methods.compareDBPassword = async function(pswd, paswdDB){
+    return await bcrypt.compare(pswd, paswdDB)  // returns true or false
+}
+
+
 
 
 export const  User = mongoose.model("users", userSchema);

@@ -1230,7 +1230,7 @@ export const movieController = {
     // sorting, paginaation, limitingFields
     getAllMovies: async(req, res, next)=>{
         try {
-
+            // console.log('allMovies', req.user)
             const features = new ApiFeatures(Movie.find(), req.query).filter().sort().limitFields().paginate()
             let allMovies = await features.query
 

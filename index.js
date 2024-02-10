@@ -80,7 +80,7 @@ const port = PORT || 4001;
 
 app.listen(port, ()=>{
     connectDB(); 
-    console.log(`app is running on http://localhost:${port}`);
+    console.log(`app is running on http://127.0.0.1:${port}`);
 });
 
 /* 

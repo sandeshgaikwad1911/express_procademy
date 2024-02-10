@@ -50,6 +50,14 @@ const validationErrorHandler = (err)=>{
    return new CustomError(errMessage , 400)   
 }
 
+const tokenExpiredHandler = (err)=>{
+    return new CustomError("Token has expired. Please login again", 401);
+}
+
+const invalidTokenHandler = (err)=>{
+    return new CustomError('Invalid Token!', 401);
+}
+
 // --------------------------------------------------------------------------------------------------------------
 
 const devErrors = (res, error)=>{
@@ -113,6 +121,12 @@ export function globalErrorHandler(error, req, res, next){
         }
         if(error.name == "ValidationError"){
             error =  validationErrorHandler(error)
+        }
+        if(error.name == "TokenExpiredError"){
+            error = tokenExpiredHandler(error)
+        }
+        if(error.name == "JsonWebTokenError"){
+            error = invalidTokenHandler(error);
         }
         prodErrors(res, error)
     }
