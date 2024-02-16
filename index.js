@@ -2,6 +2,10 @@ import { PORT } from "./config/config.js";
 import { connectDB } from "./config/db_connection.js";
 import movieRoutes from './routes/movieRoutes.js'
 import authRoutes from './routes/authRoutes.js'
+import userRoutes from './routes/userRoutes.js'
+
+import expressRateLimit from 'express-rate-limit';
+import helmet from 'helmet'
 
 import express from "express";
 import  { CustomError }  from "./utils/CustomError.js";
@@ -9,10 +13,25 @@ import { globalErrorHandler } from "./utils/globalErrorHandler.js";
 
 const app = express();
 
-app.use(express.json());
+app.use(helmet())
+
+const rateLimiter = expressRateLimit({
+    windowMs: 60 * 60 * 1000, // 1hour
+    max: 100,   // 100 requests in  1hour
+    message:  "Too many request from this IP, please try again after an hour!"
+    // if we re-start application, again we have 100 requsts
+});
+
+app.use('/api', rateLimiter);
+// we want to apply this middleware on all that api that  starts with '/api'
+
+app.use(express.json({
+    limit: '10kb'       // only accept 10kb data in requst, rest of data will truncate
+}));
 
 app.use('/api/v1/movies', movieRoutes);
-app.use('/api/v1/users', authRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/user', userRoutes);
 
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -107,3 +126,39 @@ app.listen(port, ()=>{
     "mongoose": "^6.9.2",
     "express": "^4.18.2",
 */
+
+/* 
+        1. Brut Force attack
+            in this type of attack hacker basically tries to guess a password
+            by trying millins of random password
+        
+            we can avoid such attack using,
+                1. implement max login attempts.    for eg. after three fail login attempts wait user for 1hour
+                2. implement rate limiting.
+
+        2. Denial of service  (DoS) attack
+            in this type of attack hacker send so many request to the server
+            that it crashesh the server and application becomes unavailable
+
+                we can avoid such attack using,
+                1. limit amount of data coming in request
+                2. implement rate limiting.
+
+        we are applying rate limiting
+            Rate limiting => will make sure that single ip address does not make to many request to the server,
+            
+            rate limiting count number of requst coming from same ip and
+            if too many requset then it blocks coming requst from that ip
+
+            npm i express-rate-limit
+    */
+
+    /* 
+        helmet helps secure  Express apps by setting HTTP headers.
+            see helmet github repo
+
+            npm i helmet
+    
+    */
+
+

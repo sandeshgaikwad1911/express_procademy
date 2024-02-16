@@ -23,13 +23,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         // enum: ['user', 'admin', 'admin1'],
-        default: 'user'
+        default: 'user',
+        select: false    // // when we query for all users password will not be shown in response
     },
     password: {
         type: String,
         required: [true, "Please enter a password."],
         minLength: 8,
-        select: false   // password will not be shown in response
+        select: false   // when we query for all users password will not be shown in response
     },
     confirmPassword: {
         type: String,
@@ -42,16 +43,13 @@ const userSchema = new mongoose.Schema({
         }
         // validator is work with save() or create() function only. does not work with findOneAndUpdate()
     },
+    isActive: {
+        type: Boolean,
+        default: true,
+    },
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
 
-    passwordChangedAt: Date
-    /* 
-        passwordChangedAt field will be available on user document only if this field has some value
-        that means when user changed the password.
-        if user not changed password this passwordChangedAt field will be undefined.
-        that means it will not be available on user document.
-    */
 })
 
 userSchema.pre('save', async function(next){
@@ -89,8 +87,9 @@ userSchema.methods.createResetPasswordToken = function(){
     */
 }
 
-
-
-
+/* userSchema.pre(/^find/, function(next){
+    this.find({isActive: true})
+    next();
+}) */
 
 export const  User = mongoose.model("users", userSchema);

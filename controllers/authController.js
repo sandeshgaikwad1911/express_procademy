@@ -7,21 +7,12 @@ import util from 'util';
 import { sendEmail } from "../utils/sendEmail.js";
 import crypto from 'crypto';
 
-const signToken = (id)=>{
+export const signToken = (id)=>{
     return jwt.sign({id: id}, Jwt_Secret, {expiresIn: Login_Expires});
 }
 
 export const authController = {
 
-    allUsers: asyncErrorHandler(async(req, res, next)=>{
-        const users = await User.find();
-        return res.status(200).json({
-            status: "success",
-            data: {
-                users
-            }
-        })
-    }),
 
 // ***********************************************************************************************
 
@@ -30,11 +21,27 @@ export const authController = {
         // const token = jwt.sign({id: newUser._id}, Jwt_Secret, {expiresIn: Login_Expires});
         const token =  signToken(newUser._id);
 
+
+        const options = {
+            maxAge: Login_Expires,
+            // secure: true,    // it needs https protocol to test or set cookie
+            httpOnly: true  // this restrict browser access or modify the cookie.
+        
+        }
+
+        if(process.env.Node_Env == 'production'){
+            options.secure = true;   // only works in production mode
+        }
+
+        res.cookie('jwt', token, options);
+
+        const { password, __v, isActive, ...otherInfo} = newUser._doc;
+
         return res.status(201).json({
             status: 'success',
             token: token,
             data:{
-                user: newUser
+                user: otherInfo
             }
         })
     }),
@@ -42,41 +49,59 @@ export const authController = {
 // ***********************************************************************************************
 
     login: asyncErrorHandler(async(req, res, next)=>{
-        // const {email, password} = req.body;
-        const email = req.body.email;
-        const password = req.body.password;
         
-        if( !email || !password ){
+
+        if( !req.body.email || !req.body.password ){
             const error = new CustomError("Please provide Email and Password for login in!", 400);
             return next(error)
         }
 
-        const user = await User.findOne({email: email}).select("+password");
+        const user = await User.findOne({email: req.body.email}).select("+password");
         // in resoponse we dont send  the password back to client side thats why on model we set password: {{select: false}} 
         //  but here we need password thats why .select("+passwod")
         if(!user){
             const error = new CustomError( "Invalid email or password.", 401);
             return next(error)
         }
-        const isPasswordMatch =  await user.compareDBPassword(password, user.password);
+        const isPasswordMatch =  await user.compareDBPassword(req.body.password, user.password);
         // compareDBPassword() method defined in userSchema
 
         if(!isPasswordMatch ) {
             const error = new CustomError( "Invalid email or password.", 401);
             return next(error)
         }
-
+        if(user.isActive == false){
+            await User.findOneAndUpdate(user._id, {isActive: true});
+        }
         const token = signToken(user._id)
 
+        const options = {
+            maxAge: Login_Expires,
+            // secure: true,    // it needs https protocol to test or set cookie
+            httpOnly: true  // this restrict browser access or modify the cookie.
+        
+        }
+
+        if(process.env.Node_Env == 'production'){
+            options.secure = true;   // only works in production mode
+        }
+
+        res.cookie('jwt', token, options);
+
+        const {password, __v, isActive, ...otherInfo} = user._doc;
+        //  this exclude password, __v, isActive, feild showing on client side
         return res.status(200).json({
             status: "success",
             token: token,
+            data:{
+                user: otherInfo
+            }
         })
 
     }),
 
 // ***********************************************************************************************
-
+    // we have to login first then protectedRoute works, because it needs json token
     protectedtRoute: asyncErrorHandler(async(req, res, next)=>{
         // 1.   get the token if it exist
                 const testToken = req.headers.authorization;
@@ -231,32 +256,28 @@ export const authController = {
 
 // ***********************************************************************************************
 
-    updatePassword: asyncErrorHandler(async(req, res, next)=>{
-        // console.log('currentUser', req.user);
-        const user = await User.findById(req.user._id).select("+password");
-        // console.log('user',user);
-        const isPasswordMatch = await user.compareDBPassword(req.body.currentPassword, user.password);
-        if(!isPasswordMatch) {
-            return next(new CustomError('Your current password is wrong!', 401));
-        }
-
-        user.password = req.body.password;
-        user.confirmPassword = req.body.confirmPassword;
-
-        await user.save();
-
-        // login user and send new jwt 
-        const token = signToken(user._id);
-        res.status(200).json({
-            status:"success",
-            token:token,
-            data:{
-                user: user
-            }
-        })
-    }),
-
 }  
  
-    /* node
-    require('crypto').randomBytes(32).toString('hex') */
+    /* 
+        node
+        require('crypto').randomBytes(32).toString('hex') 
+    */
+
+
+    /* 
+        Cross site scripting (xss) is type of attack where attacker tries to inject script 
+        into web page to run some malicious code.
+        it allow attacker to read browsers local-storage.
+        if we store jwt  in local storage then an attacker can steal the token,
+        
+        sot jwt should  be stored in http only cookies, so we  can send and recieve coockie but
+        can not access or modify in any way.
+
+        cookie is basically small piece of text that server send to the client,
+        and when client recieve the cookie it will automatically store it
+        and will automatically send it back to server along with all the future request
+        that we make from that client to same server.
+
+    */
+
+    
